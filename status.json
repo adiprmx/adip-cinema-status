@@ -1,67 +1,67 @@
 {
-  "generatedAt": 1794919901098,
-  "generatedAtIso": "2026-11-17T12:51:41.098Z",
+  "generatedAt": 1794921704912,
+  "generatedAtIso": "2026-11-17T13:21:44.912Z",
   "checked": 6,
   "up": 6,
   "mirrors": {
     "cinema-adipmusic": {
       "ok": true,
-      "ms": 56,
+      "ms": 45,
       "fails": 0,
-      "oks": 9,
+      "oks": 10,
       "flagged": false,
       "hidden": false,
-      "checkedAt": 1794919901098,
+      "checkedAt": 1794921704912,
       "error": null
     },
     "cf-pages": {
       "ok": true,
-      "ms": 165,
+      "ms": 198,
       "fails": 0,
-      "oks": 9,
+      "oks": 10,
       "flagged": false,
       "hidden": false,
-      "checkedAt": 1794919901098,
+      "checkedAt": 1794921704912,
       "error": null
     },
     "cinema-atlys": {
       "ok": true,
-      "ms": 384,
+      "ms": 174,
       "fails": 0,
-      "oks": 9,
+      "oks": 10,
       "flagged": false,
       "hidden": false,
-      "checkedAt": 1794919901098,
+      "checkedAt": 1794921704912,
       "error": null
     },
     "vercel": {
       "ok": true,
-      "ms": 224,
+      "ms": 147,
       "fails": 0,
-      "oks": 9,
+      "oks": 10,
       "flagged": false,
       "hidden": false,
-      "checkedAt": 1794919901098,
+      "checkedAt": 1794921704912,
       "error": null
     },
     "render": {
       "ok": true,
-      "ms": 530,
+      "ms": 390,
       "fails": 0,
-      "oks": 9,
+      "oks": 10,
       "flagged": false,
       "hidden": false,
-      "checkedAt": 1794919901098,
+      "checkedAt": 1794921704912,
       "error": null
     },
     "netlify": {
       "ok": true,
-      "ms": 519,
+      "ms": 143,
       "fails": 0,
-      "oks": 9,
+      "oks": 10,
       "flagged": false,
       "hidden": false,
-      "checkedAt": 1794919901098,
+      "checkedAt": 1794921704912,
       "error": null
     }
   }
