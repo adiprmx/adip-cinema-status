@@ -16,6 +16,14 @@
 # beban tinggi; jadwal adalah best-effort, keterlambatan 5-30 menit
 # bisa terjadi dan itu bisa diterima untuk monitor).
 #
+# CATATAN K-C102 (17 Nov 2026): NOL run schedule sejak repo dibuat
+# (14 slot terlewat 06:07-09:22 UTC) walau cron ada di main + state
+# workflow active — scheduler GitHub belum diketahui penyebabnya.
+# Komentar ini menyentuh berkas workflow agar jadwal terdaftar ulang;
+# status dipulihkan manual via dispatch (run 44053721875, 09:14 UTC).
+# Bila slot berikutnya tetap kosong, monitor butuh pemicu cadangan
+# (dispatch berkala dari luar) sampai scheduler pulih.
+#
 # Commit: HANYA bila status berubah ATAU commit terakhir sudah lebih
 # dari 45 menit lalu (heartbeat). Tanpa heartbeat, generatedAt membeku
 # saat tidak ada perubahan dan pintu akan mengabaikan status sebagai
