@@ -1,0 +1,86 @@
+# monitor.yml - Workflow monitor uptime Adip Cinema (PRODUKSI v5).
+# Repo PUBLIK terpisah adiprmx/adip-cinema-status.
+# Repo publik = menit Actions TIDAK TERBATAS (runner standar gratis
+# tanpa batas menit di repo publik; repo privat dibatasi 2.000
+# menit/bulan di paket Free). Repo status juga menyajikan status.json
+# lewat GitHub Pages (paket Free hanya mengizinkan Pages di repo
+# publik), sehingga situs statis bisa membaca status tanpa token.
+#
+# JANGAN pindahkan workflow ini ke repo privat adip-cinema-web:
+# tiap 15 menit = 96 run/hari, minimal 2.880 menit/bulan, MELEBIHI
+# jatah 2.000 menit repo privat. Di repo publik, angka yang sama
+# berharga Rp0 dan tidak memakan jatah apa pun.
+#
+# Jadwal: tiap 15 menit, di menit :07 :22 :37 :52 (BUKAN di menit :00,
+# karena run terjadwal GitHub sering tertunda di pergantian jam saat
+# beban tinggi; jadwal adalah best-effort, keterlambatan 5-30 menit
+# bisa terjadi dan itu bisa diterima untuk monitor).
+#
+# Commit: HANYA bila status berubah ATAU commit terakhir sudah lebih
+# dari 45 menit lalu (heartbeat). Tanpa heartbeat, generatedAt membeku
+# saat tidak ada perubahan dan pintu akan mengabaikan status sebagai
+# basi sesudah 1 jam. Heartbeat juga menjaga repo tetap "aktif"
+# sehingga jadwal tidak dimatikan otomatis sesudah 60 hari tanpa
+# aktivitas (aturan GitHub untuk repo publik).
+#
+# Keamanan: workflow ini TIDAK memakai secret apa pun. Ia hanya membaca
+# mirrors.json, mengecek URL publik milik owner, dan menulis status.json.
+# Ia tidak me-deploy apa pun dan tidak menyentuh repo utama.
+#
+# Adaptasi (K-C82): 2 gagal berturut-turut = label "Sedang bermasalah",
+# 3 gagal = keluar dari alihan otomatis (tetap di daftar manual +
+# tombol Buka), pulih sesudah 2 sukses. Fail-open: monitor bilang
+# semua mati = monitor diabaikan pintu. Aturan ini hidup di
+# check-mirrors.mjs + pintu-pintar.js (DEFAULTS yang sama).
+
+name: Monitor mirror
+
+on:
+  schedule:
+    - cron: "7,22,37,52 * * * *"
+  workflow_dispatch: {}
+
+concurrency:
+  group: monitor
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pastikan salinan cadangan mirrors.json ada
+        # Daftar mirror diambil checker dari URL live situs utama dulu
+        # (--mirrors-url di bawah); salinan di repo ini hanya cadangan
+        # bila situs utama mati. Langkah ini memastikan cadangan itu ada.
+        run: test -f mirrors.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Cek semua mirror
+        run: node check-mirrors.mjs --mirrors mirrors.json --mirrors-url https://cinema.adipmusic.my.id/mirrors.json --prev status.json --out status.json
+
+      - name: Commit bila berubah atau heartbeat
+        run: |
+          git config user.name "adip-cinema-monitor"
+          git config user.email "adip-cinema-monitor@users.noreply.github.com"
+          git add status.json
+          if git diff --cached --quiet; then
+            LAST=$(git log -1 --format=%ct 2>/dev/null || echo 0)
+            NOW=$(date +%s)
+            AGE=$((NOW - LAST))
+            if [ "$AGE" -lt 2700 ]; then
+              echo "Tidak ada perubahan dan commit terakhir $AGE detik lalu. Lewati commit."
+              exit 0
+            fi
+            echo "Heartbeat: commit terakhir $AGE detik lalu, tulis ulang status."
+          fi
+          git commit -m "status: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git push

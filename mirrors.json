@@ -1,0 +1,131 @@
+{
+  "version": 1,
+  "updated": "2026-11-17",
+  "primary": "cinema-adipmusic",
+  "mirrors": [
+    {
+      "id": "cf-pages",
+      "url": "https://adip-cinema-web.pages.dev/",
+      "label": "Utama",
+      "status": "live-v2",
+      "priority": 1,
+      "note": "Cadangan (v2); bandwidth unlimited; _headers asli"
+    },
+    {
+      "id": "cinema-adipmusic",
+      "url": "https://cinema.adipmusic.my.id/",
+      "label": "cinema.adipmusic.my.id",
+      "status": "live",
+      "note": "Situs utama Adip Cinema — Vercel (v3). CNAME ke target per-proyek Vercel, DNS-only. Verify-live lolos 16 Nov 2026 10:22 WIB (HTTP 200 + judul + 123 judul)."
+    },
+    {
+      "id": "cinema-atlys",
+      "url": "https://cinema.atlys.ai.id/",
+      "label": "cinema.atlys.ai.id",
+      "status": "live-v2",
+      "note": "Situs cadangan — Cloudflare Pages (masih v2 sampai token pulih + deploy v3). CNAME ke adip-cinema-web.pages.dev; custom domain didaftarkan di Pages via API. Verify-live lolos 16 Nov 2026 10:22 WIB (HTTP 200 + judul)."
+    },
+    {
+      "id": "workers-static-assets",
+      "url": "",
+      "label": "Cloudflare Workers",
+      "status": "pending-account",
+      "note": "Aset statis unlimited, _headers sama; satu akun Cloudflare dengan Pages"
+    },
+    {
+      "id": "vercel",
+      "url": "https://adip-cinema-web.vercel.app",
+      "label": "Vercel",
+      "status": "live",
+      "priority": 3,
+      "note": "LIVE 16 Nov 2026 ~06:19 WIB (Vercel Hobby; verifikasi parent 6/6 cek lolos)."
+    },
+    {
+      "id": "render",
+      "url": "https://adip-cinema-web.onrender.com",
+      "label": "Render",
+      "status": "live",
+      "priority": 4,
+      "note": "LIVE 16 Nov 2026 04:52 WIB (Free; 15 header terpasang — CSP media-src masih versi lama, wajib update dashboard setelah regenerasi; redeploy dari repo privat via GitHub App)."
+    },
+    {
+      "id": "surge",
+      "url": "",
+      "label": "Surge",
+      "status": "pending-account",
+      "note": "Tanpa meteran bandwidth; TIDAK BISA header kustom (CSP via meta tag)"
+    },
+    {
+      "id": "netlify",
+      "url": "https://adip-cinema-web.netlify.app",
+      "label": "Netlify",
+      "status": "live",
+      "priority": 5,
+      "note": "LIVE 16 Nov 2026 ~10:13 WIB via Netlify Drop (v3, 123 judul terverifikasi; 10/10 verify-live). 300 kredit/bln (sekitar 15 GB maks); 15 kredit per deploy."
+    },
+    {
+      "id": "firebase",
+      "url": "https://adip-cinema-web.web.app/",
+      "label": "Firebase",
+      "status": "live",
+      "priority": 2,
+      "note": "LIVE 17 Nov 2026 10:07 WIB (v4.0.0, 154/154 file; HTTP 200 + judul terverifikasi laporan 02). Transfer 360 MB/hari; _headers -> firebase.json"
+    },
+    {
+      "id": "neocities",
+      "url": "",
+      "label": "Neocities",
+      "status": "pending-account",
+      "note": "200 GB/bln (soft); WAJIB uji live soal CSP + file .json"
+    },
+    {
+      "id": "nekoweb",
+      "url": "",
+      "label": "Nekoweb",
+      "status": "pending-account",
+      "note": "Lapis-2; tanpa CSP paksaan; host komunitas kecil"
+    },
+    {
+      "id": "filebase",
+      "url": "",
+      "status": "pending-account",
+      "note": "LOLOS-ToS (RENDAH). Tanpa kartu terverifikasi. 5 GB pooled (bucket IPFS, bukan S3 biasa). CID berubah tiap deploy — URL mirror diperbarui per deploy. Skrip deploy-filebase.py siap (dry-run exit 1 = butuh kredensial).",
+      "label": "Filebase"
+    },
+    {
+      "id": "alwaysdata",
+      "url": "",
+      "status": "pending-account",
+      "note": "BERSYARAT (RENDAH–SEDANG). Free for life 1 GB; header via .htaccess. Syarat: login panel 1×/120 hari; JANGAN daftarkan metode pembayaran (upgrade otomatis §2.1.3 + overage §8.2). Deploy SFTP (port 22 terbuka dari VM). Skrip deploy-alwaysdata.sh siap.",
+      "label": "alwaysdata"
+    },
+    {
+      "id": "pinata",
+      "url": "",
+      "status": "pending-account",
+      "note": "BERSYARAT (RENDAH). 1 GB, 10K request/bulan — mirror darurat saja. Verifikasi tanpa-kartu SAAT daftar (bila diminta kartu, BATALKAN). CID berubah tiap deploy. Skrip deploy-pinata.py siap (dry-run exit 1 = butuh kredensial).",
+      "label": "Pinata"
+    },
+    {
+      "id": "freehostia",
+      "url": "",
+      "status": "pending-account",
+      "note": "BERSYARAT (SEDANG). 250 MB, 6 GB/bulan. Perpanjang sebelum 1 tahun; 1 akun. FTP port 21 DIBLOKIR dari VM — deploy harus dari HP/PC owner. Hostname FTP dari panel/email (tidak ada di docs publik). Skrip deploy-freehostia.sh siap.",
+      "label": "Freehostia"
+    },
+    {
+      "id": "x10hosting",
+      "url": "",
+      "status": "pending-account",
+      "note": "BERSYARAT (SEDANG). 500 MB. Login portal 1×/30 hari atau hapus permanen hari ke-51. FTP port 21 DIBLOKIR dari VM — deploy harus dari HP/PC owner. Hostname FTP dari panel/email. Skrip deploy-x10hosting.sh siap.",
+      "label": "x10hosting"
+    },
+    {
+      "id": "harvis",
+      "url": "",
+      "status": "pending-account",
+      "note": "BERSYARAT (RENDAH–SEDANG). 500 file / 50 MB. 1 situs 1 akun; klaim 24 jam bila deploy anonim; pantau meter bulanan; JANGAN daftarkan metode pembayaran. Perilaku auto-step-up tanpa kartu + batas pasca-1 Jan 2027 belum terverifikasi. Skrip deploy-harvis.sh siap.",
+      "label": "Harvis.dev"
+    }
+  ]
+}
