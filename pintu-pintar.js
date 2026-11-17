@@ -20,8 +20,24 @@
  *   - repo monitor adiprmx/adip-cinema-status (salinan pintu-pintar.js,
  *     dipakai check-mirrors.mjs) — salinan itu WAJIB identik dengan
  *     file ini; bila file ini berubah, salin ulang ke repo status.
- * Tes Node 75 cek (v5/scratch/pintu-pintar/test-pintu-pintar.mjs)
- * dijalankan terhadap file ini.
+ * Tes Node 87 cek (v5/scratch/pintu-pintar/test-pintu-pintar.mjs,
+ * dijalankan terhadap file ini lewat harness
+ * v5/scratch/paket5-pintu/node-suite/) + uji browser Playwright 17 cek.
+ *
+ * RETRY (K-C97, Paket 5): cermin yang TIMEOUT mendapat satu percobaan
+ * ulang dengan timeout lebih panjang, sebelum dinyatakan gagal. Akar
+ * masalahnya: putaran pertama uji live 17 Nov 15:46 WIB memberi 0/7
+ * timeout total (~4000 ms semua), lalu putaran ulang 6/7 lolos — jeda
+ * dingin bersama di sisi browser (DNS/TLS/proksi baru), bukan cermin
+ * yang mati. Tanpa retry, satu cek dingin memvonis semua cermin mati.
+ * Retry HANYA untuk timeout; network/bad-title/http tidak diulang
+ * karena pengulangan tidak mengubah hasilnya. Jalur cepat (fastPath)
+ * TIDAK mengulang: tugasnya hanya probe cepat, dan cek penuh yang
+ * mengambil alih bila probe gagal. Batas global naik 6 -> 10 detik
+ * supaya satu siklus penuh (4 detik + 5 detik retry) muat di dalamnya;
+ * batas hanya mengikat bila tidak ada satu pun cermin yang terverifikasi.
+ * Perilaku grace + fail-open + daftar manual tidak berubah (laporan 19
+ * §5.3 dipertahankan).
  *
  * Keamanan (diwarisi dari pintu.js, temuan Red Team r1-r3):
  * - Hanya mirror berstatus live/live-v2 yang jadi kandidat (N-STATUS).
@@ -54,9 +70,30 @@
        dan itu benar: pengunjung tidak boleh dilempar ke layar loading
        60 detik. */
     timeoutMs: 4000,
-    /* 6000: sama seperti pintu.js sekarang. Pengunjung tidak pernah
-       menunggu lebih dari 6 detik sebelum melihat daftar manual. */
-    globalCapMs: 6000,
+    /* 5000: timeout percobaan ULANG (K-C97, Paket 5). Lebih panjang
+       dari percobaan pertama (4000) supaya cermin yang masih
+       menyelesaikan pemanasan dinginnya mendapat ruang; 4000 + 5000
+       = 9000 masih di bawah batas global 10000 dengan sisa 1 detik,
+       jadi batas global tidak pernah memotong retry di tengah jalan.
+       Retry hanya untuk timeout; lihat checkMirror. */
+    retryTimeoutMs: 5000,
+    /* 1: satu percobaan ulang, tidak lebih. Satu retry sudah
+       menyelamatkan anomali 0/7 (putaran kedua uji live selalu cepat);
+       retry kedua hanya menambah waktu tunggu tanpa bukti manfaat,
+       dan cermin yang gagal dua kali memang tidak layak jadi tujuan
+       alihan. Jalur cepat memakai 0 (lihat fastPath). */
+    maxRetries: 1,
+    /* 10000: naik dari 6000 (K-C97, Paket 5). Batas global WAJIB
+       menampung satu siklus penuh percobaan pertama + retry
+       (4000 + 5000 = 9000) ditambah sisa 1 detik; bila batas tetap
+       6000, batas akan memotong retry di detik ke-2 dan retry menjadi
+       kode mati di skenario yang justru membutuhkannya. Batas hanya
+       mengikat bila TIDAK ADA cermin yang terverifikasi (semua mati
+       atau menggantung); dalam kunjungan normal, jendela grace
+       mengakhiri cek dalam ~1 detik, tidak berubah. Harga yang
+       dibayar: daftar manual paling lambat tampil di 10 detik, bukan
+       6 detik, dan hanya dalam skenario semua-gagal. */
+    globalCapMs: 10000,
     /* 500: sesudah mirror pertama terverifikasi, tunggu paling lama
        500 ms lagi. Tujuannya BUKAN mencari yang lebih cepat (yang
        pertama terverifikasi sudah yang tercepat), melainkan memberi
@@ -225,42 +262,77 @@
   /* Cek satu mirror: fetch + verifikasi isi + ukur waktu.               */
   /* ------------------------------------------------------------------ */
 
+  /* Cek satu mirror: fetch + verifikasi isi + ukur waktu. Hasil
+     membawa `attempts` (jumlah percobaan yang dipakai: 1 atau 2) dan
+     `ms` adalah WAKTU TOTAL sejak percobaan pertama dimulai, supaya
+     peringkat kecepatan jujur: cermin yang butuh retry memang membuat
+     pengunjung menunggu lebih lama. */
   function checkMirror(mirror, opts, deps) {
     var fetchFn = deps.fetchFn;
     var now = deps.now;
     if (typeof fetchFn !== "function") {
-      return Promise.resolve({ id: mirror.id, ok: false, ms: null, error: "no-fetch" });
+      return Promise.resolve({ id: mirror.id, ok: false, ms: null, error: "no-fetch", attempts: 0 });
     }
     var started = now();
-    var controller = null;
-    var timer = null;
-    var options = { mode: "cors", cache: "no-store" };
-    var AC = deps.AbortController;
-    if (typeof AC === "function") {
-      controller = new AC();
-      options.signal = controller.signal;
-      timer = setTimeout(function () { controller.abort(); }, opts.timeoutMs);
-    }
-    function done(ok, error) {
-      if (timer) clearTimeout(timer);
-      return { id: mirror.id, ok: ok, ms: now() - started, error: error || null };
-    }
-    return fetchFn(mirror.url, options).then(
-      function (res) {
-        if (!res.ok) return done(false, "http-" + res.status);
-        return res.text().then(
-          function (text) {
-            var ok = hasExpectedTitle(text, opts.expectedTitle, deps.env);
-            return done(ok, ok ? null : "bad-title");
-          },
-          function () { return done(false, "body"); }
-        );
-      },
-      function (err) {
-        var name = err && err.name === "AbortError" ? "timeout" : "network";
-        return done(false, name);
+    var maxRetries = (typeof opts.maxRetries === "number") ? opts.maxRetries : 1;
+    var retryMs = (typeof opts.retryTimeoutMs === "number") ? opts.retryTimeoutMs : opts.timeoutMs;
+    var attempts = 0;
+
+    function attempt(timeoutMs) {
+      attempts++;
+      var controller = null;
+      var timer = null;
+      var options = { mode: "cors", cache: "no-store" };
+      var AC = deps.AbortController;
+      if (typeof AC === "function") {
+        controller = new AC();
+        options.signal = controller.signal;
+        timer = setTimeout(function () { controller.abort(); }, timeoutMs);
       }
-    );
+      function finish(ok, error) {
+        if (timer) clearTimeout(timer);
+        return { id: mirror.id, ok: ok, ms: now() - started, error: error || null, attempts: attempts };
+      }
+      /* TIMEOUT adalah satu-satunya kegagalan yang diulang (K-C97).
+         Percobaan pertama bisa gagal karena jalurnya dingin
+         (DNS/TLS/proksi baru di browser pengunjung), bukan karena
+         cerminnya mati; bukti uji live: putaran pertama 0/7 timeout,
+         putaran ulang 6/7 lolos. Percobaan ulang memakai timeout
+         lebih panjang (retryTimeoutMs). Kegagalan lain tidak diulang:
+         network (termasuk blokir CORS — pengulangan tidak mengubah
+         header cermin), bad-title (isi halaman tidak berubah dalam
+         hitungan detik), http-XXX, body. */
+      function fail(name) {
+        if (name === "timeout" && attempts <= maxRetries) {
+          if (timer) clearTimeout(timer);
+          return attempt(retryMs);
+        }
+        return finish(false, name);
+      }
+      return fetchFn(mirror.url, options).then(
+        function (res) {
+          if (!res.ok) return finish(false, "http-" + res.status);
+          return res.text().then(
+            function (text) {
+              var ok = hasExpectedTitle(text, opts.expectedTitle, deps.env);
+              return finish(ok, ok ? null : "bad-title");
+            },
+            function (err) {
+              /* Abort saat membaca bodi (server mengirim header lalu
+                 menahan bodi melewati timeout) adalah timeout juga,
+                 bukan "body": tanpa ini, cermin yang menahan bodi
+                 tidak pernah mendapat retry. */
+              return fail(err && err.name === "AbortError" ? "timeout" : "body");
+            }
+          );
+        },
+        function (err) {
+          return fail(err && err.name === "AbortError" ? "timeout" : "network");
+        }
+      );
+    }
+
+    return attempt(opts.timeoutMs);
   }
 
   /* ------------------------------------------------------------------ */
@@ -436,7 +508,10 @@
   /* Jalur cepat kunjungan ulang: verifikasi SATU mirror (yang tercepat
      di cache yang masih segar). Berhasil = langsung pakai; gagal =
      panggil runChecks penuh. Mengembalikan null bila cache tidak bisa
-     dipakai. */
+     dipakai. Jalur cepat TIDAK mengulang (maxRetries 0): tugasnya
+     hanya probe cepat, dan fallback-nya ADALAH cek penuh (yang
+     mengulang). Mengulang di sini akan menghabiskan batas global
+     untuk satu cermin dan membuat cek penuh tidak pernah jalan. */
   function fastPath(cache, cands, statusMap, opts, deps) {
     if (!cache || !cache.bestId) return Promise.resolve(null);
     var target = null;
@@ -444,7 +519,10 @@
       if (cands[i].id === cache.bestId) { target = cands[i]; break; }
     }
     if (!target) return Promise.resolve(null);
-    return checkMirror(target, opts, deps).then(function (r) {
+    var fastOpts = {};
+    for (var k in opts) fastOpts[k] = opts[k];
+    fastOpts.maxRetries = 0;
+    return checkMirror(target, fastOpts, deps).then(function (r) {
       if (!r.ok) return null;
       var out = decide([r], cands, resolveStatusMap(statusMap), opts);
       out.results = [r];
