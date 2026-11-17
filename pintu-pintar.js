@@ -458,6 +458,15 @@
     if (!statusUrl || typeof deps.fetchFn !== "function") {
       return Promise.resolve(null);
     }
+    /* fetchFn WAJIB dipanggil sebagai fungsi biasa (bukan
+       deps.fetchFn(...)): pemanggilan metode mengikat `this` ke objek
+       deps, dan fetch bawaan browser menolak `this` yang bukan Window
+       ("Illegal invocation") sehingga status TIDAK PERNAH terbaca di
+       browser — pintu selalu jalan tanpa status. checkMirror sudah
+       memakai pola ini; fetchStatus sempat memakai pola metode dan
+       cacatnya hanya ketahuan di uji browser Playwright (tes Node
+       75/75 lolos karena fetch Node tidak peduli `this`). */
+    var fetchFn = deps.fetchFn;
     var controller = null;
     var timer = null;
     var options = { cache: "no-store" };
@@ -466,7 +475,7 @@
       options.signal = controller.signal;
       timer = setTimeout(function () { controller.abort(); }, opts.statusTimeoutMs);
     }
-    return deps.fetchFn(statusUrl, options).then(
+    return fetchFn(statusUrl, options).then(
       function (res) {
         if (timer) clearTimeout(timer);
         if (!res.ok) return null;
