@@ -1,67 +1,77 @@
 {
-  "generatedAt": 1794988309557,
-  "generatedAtIso": "2026-11-18T07:51:49.557Z",
-  "checked": 6,
-  "up": 6,
+  "generatedAt": 1794991466425,
+  "generatedAtIso": "2026-11-18T08:44:26.425Z",
+  "checked": 7,
+  "up": 7,
   "mirrors": {
     "cinema-adipmusic": {
       "ok": true,
-      "ms": 27,
+      "ms": 181,
       "fails": 0,
-      "oks": 40,
+      "oks": 41,
       "flagged": false,
       "hidden": false,
-      "checkedAt": 1794988309557,
+      "checkedAt": 1794991466425,
       "error": null
     },
     "cf-pages": {
       "ok": true,
-      "ms": 85,
+      "ms": 93,
       "fails": 0,
-      "oks": 40,
+      "oks": 41,
       "flagged": false,
       "hidden": false,
-      "checkedAt": 1794988309557,
+      "checkedAt": 1794991466425,
       "error": null
     },
-    "cinema-atlys": {
+    "firebase": {
       "ok": true,
-      "ms": 386,
+      "ms": 205,
       "fails": 0,
-      "oks": 40,
+      "oks": 1,
       "flagged": false,
       "hidden": false,
-      "checkedAt": 1794988309557,
+      "checkedAt": 1794991466425,
       "error": null
     },
     "vercel": {
       "ok": true,
-      "ms": 72,
+      "ms": 180,
       "fails": 0,
-      "oks": 40,
+      "oks": 41,
       "flagged": false,
       "hidden": false,
-      "checkedAt": 1794988309557,
+      "checkedAt": 1794991466425,
       "error": null
     },
     "render": {
       "ok": true,
-      "ms": 315,
+      "ms": 538,
       "fails": 0,
-      "oks": 40,
+      "oks": 41,
       "flagged": false,
       "hidden": false,
-      "checkedAt": 1794988309557,
+      "checkedAt": 1794991466425,
       "error": null
     },
     "netlify": {
       "ok": true,
-      "ms": 478,
+      "ms": 373,
       "fails": 0,
-      "oks": 40,
+      "oks": 41,
       "flagged": false,
       "hidden": false,
-      "checkedAt": 1794988309557,
+      "checkedAt": 1794991466425,
+      "error": null
+    },
+    "cinema-atlys": {
+      "ok": true,
+      "ms": 322,
+      "fails": 0,
+      "oks": 41,
+      "flagged": false,
+      "hidden": false,
+      "checkedAt": 1794991466425,
       "error": null
     }
   }
